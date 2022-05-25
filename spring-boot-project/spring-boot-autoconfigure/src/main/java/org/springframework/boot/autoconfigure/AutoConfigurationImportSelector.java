@@ -383,7 +383,9 @@ public class AutoConfigurationImportSelector implements DeferredImportSelector, 
 			String[] candidates = StringUtils.toStringArray(configurations);
 			boolean skipped = false;
 			for (AutoConfigurationImportFilter filter : this.filters) {
+				// 逐个利用AutoConfigurationImportFilter来判断所有的自动配置类的条件是否匹配，匹配结果存在match数组中
 				boolean[] match = filter.match(candidates, this.autoConfigurationMetadata);
+
 				for (int i = 0; i < match.length; i++) {
 					if (!match[i]) {
 						candidates[i] = null;
@@ -391,9 +393,13 @@ public class AutoConfigurationImportSelector implements DeferredImportSelector, 
 					}
 				}
 			}
+
+			// 全部都匹配
 			if (!skipped) {
 				return configurations;
 			}
+
+			// 把匹配的记录在result集合中，最后返回
 			List<String> result = new ArrayList<>(candidates.length);
 			for (String candidate : candidates) {
 				if (candidate != null) {

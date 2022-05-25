@@ -173,6 +173,7 @@ class ConfigDataEnvironment {
 				contributors.add(ConfigDataEnvironmentContributor.ofExisting(propertySource));
 			}
 		}
+
 		contributors.addAll(getInitialImportContributors(binder));
 		if (defaultPropertySource != null) {
 			this.logger.trace("Creating wrapped config data contributor for default property source");
@@ -192,9 +193,12 @@ class ConfigDataEnvironment {
 
 	private List<ConfigDataEnvironmentContributor> getInitialImportContributors(Binder binder) {
 		List<ConfigDataEnvironmentContributor> initialContributors = new ArrayList<>();
+
 		addInitialImportContributors(initialContributors, bindLocations(binder, IMPORT_PROPERTY, EMPTY_LOCATIONS));
 		addInitialImportContributors(initialContributors,
 				bindLocations(binder, ADDITIONAL_LOCATION_PROPERTY, EMPTY_LOCATIONS));
+
+		// 默认会向initialContributors中添加两个ConfigDataEnvironmentContributor，用来寻找DEFAULT_SEARCH_LOCATIONS目录下的配置文件
 		addInitialImportContributors(initialContributors,
 				bindLocations(binder, LOCATION_PROPERTY, DEFAULT_SEARCH_LOCATIONS));
 		return initialContributors;
@@ -221,15 +225,25 @@ class ConfigDataEnvironment {
 	 * {@link Environment}.
 	 */
 	void processAndApply() {
+		// ConfigDataImporter就是用来解析properties、yml文件的，会将结果封装为PropertySource
 		ConfigDataImporter importer = new ConfigDataImporter(this.logFactory, this.notFoundAction, this.resolvers,
 				this.loaders);
 		registerBootstrapBinder(this.contributors, null, DENY_INACTIVE_BINDING);
+
+		// 拿到application.properties和application.yml对应的contributors
 		ConfigDataEnvironmentContributors contributors = processInitial(this.contributors, importer);
 		ConfigDataActivationContext activationContext = createActivationContext(
 				contributors.getBinder(null, BinderOption.FAIL_ON_BIND_TO_INACTIVE_SOURCE));
 		contributors = processWithoutProfiles(contributors, importer, activationContext);
+
+		// 基于contributors看配置的profile是什么，可以在application.properties/yml中配置，所以需要先拿application.properties和application.yml
+		// spring.profiles.active=dev
 		activationContext = withProfiles(contributors, activationContext);
+
+		// 根据配置的profiles获取到对应的properties或yml文件，比如application-dev.properties，对应的contributors
 		contributors = processWithProfiles(contributors, importer, activationContext);
+
+		// 将contributors中的propertySource添加到Environment中去
 		applyToEnvironment(contributors, activationContext, importer.getLoadedLocations(),
 				importer.getOptionalLocations());
 	}
@@ -237,6 +251,7 @@ class ConfigDataEnvironment {
 	private ConfigDataEnvironmentContributors processInitial(ConfigDataEnvironmentContributors contributors,
 			ConfigDataImporter importer) {
 		this.logger.trace("Processing initial config data environment contributors without activation context");
+
 		contributors = contributors.withProcessedImports(importer, null);
 		registerBootstrapBinder(contributors, null, DENY_INACTIVE_BINDING);
 		return contributors;
@@ -324,9 +339,13 @@ class ConfigDataEnvironment {
 			Set<ConfigDataLocation> optionalLocations) {
 		checkForInvalidProperties(contributors);
 		checkMandatoryLocations(contributors, activationContext, loadedLocations, optionalLocations);
+
+		// 把contributors中的PropertySource添加到environment中
 		MutablePropertySources propertySources = this.environment.getPropertySources();
 		applyContributor(contributors, activationContext, propertySources);
+
 		DefaultPropertiesPropertySource.moveToEnd(propertySources);
+
 		Profiles profiles = activationContext.getProfiles();
 		this.logger.trace(LogMessage.format("Setting default profiles: %s", profiles.getDefault()));
 		this.environment.setDefaultProfiles(StringUtils.toStringArray(profiles.getDefault()));
@@ -348,6 +367,7 @@ class ConfigDataEnvironment {
 				else {
 					this.logger
 							.trace(LogMessage.format("Adding imported property source '%s'", propertySource.getName()));
+					// 把contributor中的propertySource添加到Environment中的propertySources
 					propertySources.addLast(propertySource);
 					this.environmentUpdateListener.onPropertySourceAdded(propertySource, contributor.getLocation(),
 							contributor.getResource());

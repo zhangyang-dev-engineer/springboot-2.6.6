@@ -94,7 +94,6 @@ class ServletWebServerFactoryConfiguration {
 	@ConditionalOnClass({ Servlet.class, Server.class, Loader.class, WebAppContext.class })
 	@ConditionalOnMissingBean(value = ServletWebServerFactory.class, search = SearchStrategy.CURRENT)
 	static class EmbeddedJetty {
-
 		@Bean
 		JettyServletWebServerFactory JettyServletWebServerFactory(
 				ObjectProvider<JettyServerCustomizer> serverCustomizers) {

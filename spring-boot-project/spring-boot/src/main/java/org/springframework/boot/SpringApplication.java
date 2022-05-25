@@ -296,17 +296,22 @@ public class SpringApplication {
 	 */
 	public ConfigurableApplicationContext run(String... args) {
 		long startTime = System.nanoTime();
+
+		// 引导启动器，为ApplicationContext启动做准备的
 		DefaultBootstrapContext bootstrapContext = createBootstrapContext();
+
 		ConfigurableApplicationContext context = null;
 		configureHeadlessProperty();
 
 		// 从spring.factories中获取SpringApplicationRunListener对象
 		// 默认会拿到一个EventPublishingRunListener，它会启动过程的各个阶段发布对应的事件
 		SpringApplicationRunListeners listeners = getRunListeners(args);
+
 		listeners.starting(bootstrapContext, this.mainApplicationClass);
 		try {
 			// 将run()的参数封装为DefaultApplicationArguments对象
 			ApplicationArguments applicationArguments = new DefaultApplicationArguments(args);
+
 			ConfigurableEnvironment environment = prepareEnvironment(listeners, bootstrapContext, applicationArguments);
 			configureIgnoreBeanInfo(environment);
 			Banner printedBanner = printBanner(environment);
@@ -359,7 +364,10 @@ public class SpringApplication {
 		ConfigurableEnvironment environment = getOrCreateEnvironment();
 		configureEnvironment(environment, applicationArguments.getSourceArgs());
 		ConfigurationPropertySources.attach(environment);
+
+		// 触发environmentPrepared
 		listeners.environmentPrepared(bootstrapContext, environment);
+
 		DefaultPropertiesPropertySource.moveToEnd(environment);
 		Assert.state(!environment.containsProperty("spring.main.environment-prefix"),
 				"Environment prefix cannot be set via properties.");
@@ -702,6 +710,7 @@ public class SpringApplication {
 		if (logger.isDebugEnabled()) {
 			logger.debug("Loading source " + StringUtils.arrayToCommaDelimitedString(sources));
 		}
+		//
 		BeanDefinitionLoader loader = createBeanDefinitionLoader(getBeanDefinitionRegistry(context), sources);
 		if (this.beanNameGenerator != null) {
 			loader.setBeanNameGenerator(this.beanNameGenerator);
@@ -783,10 +792,13 @@ public class SpringApplication {
 		runners.addAll(context.getBeansOfType(ApplicationRunner.class).values());
 		runners.addAll(context.getBeansOfType(CommandLineRunner.class).values());
 		AnnotationAwareOrderComparator.sort(runners);
+
 		for (Object runner : new LinkedHashSet<>(runners)) {
+
 			if (runner instanceof ApplicationRunner) {
 				callRunner((ApplicationRunner) runner, args);
 			}
+
 			if (runner instanceof CommandLineRunner) {
 				callRunner((CommandLineRunner) runner, args);
 			}

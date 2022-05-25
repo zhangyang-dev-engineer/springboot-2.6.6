@@ -102,6 +102,8 @@ class ConfigDataLocationResolvers {
 		if (location == null) {
 			return Collections.emptyList();
 		}
+
+		// 核心是利用StandardConfigDataLocationResolver来解析location
 		for (ConfigDataLocationResolver<?> resolver : getResolvers()) {
 			if (resolver.isResolvable(context, location)) {
 				return resolve(resolver, context, location, profiles);
@@ -112,6 +114,7 @@ class ConfigDataLocationResolvers {
 
 	private List<ConfigDataResolutionResult> resolve(ConfigDataLocationResolver<?> resolver,
 			ConfigDataLocationResolverContext context, ConfigDataLocation location, Profiles profiles) {
+		// resolver为StandardConfigDataLocationResolver
 		List<ConfigDataResolutionResult> resolved = resolve(location, false, () -> resolver.resolve(context, location));
 		if (profiles == null) {
 			return resolved;
@@ -123,7 +126,10 @@ class ConfigDataLocationResolvers {
 
 	private List<ConfigDataResolutionResult> resolve(ConfigDataLocation location, boolean profileSpecific,
 			Supplier<List<? extends ConfigDataResource>> resolveAction) {
+		// resources表示解析得到的application.properties或application.yml文件对应的ConfigDataResource对象
 		List<ConfigDataResource> resources = nonNullList(resolveAction.get());
+
+		// 将ConfigDataResource对象包装为ConfigDataResolutionResult
 		List<ConfigDataResolutionResult> resolved = new ArrayList<>(resources.size());
 		for (ConfigDataResource resource : resources) {
 			resolved.add(new ConfigDataResolutionResult(location, resource, profileSpecific));

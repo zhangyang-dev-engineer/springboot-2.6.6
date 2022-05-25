@@ -111,11 +111,21 @@ class ConfigDataEnvironmentContributors implements Iterable<ConfigDataEnvironmen
 			ConfigDataLocationResolverContext locationResolverContext = new ContributorConfigDataLocationResolverContext(
 					result, contributor, activationContext);
 			ConfigDataLoaderContext loaderContext = new ContributorDataLoaderContext(this);
+
+			// imports表示要导入的文件路径
+			// 比如会获取到：
+			// file:./;optional:file:./config/;optional:file:./config/*/
+			// classpath:/;optional:classpath:/config/
+			// importer会从以上几个路径下找配置文件
 			List<ConfigDataLocation> imports = contributor.getImports();
 			this.logger.trace(LogMessage.format("Processing imports %s", imports));
+
+			// 利用importer来加载application.properties、application.yml
+			// 从上面imports对应的各个目录下寻找application.properties、application.yml解析，并得到对应的PropertySource
 			Map<ConfigDataResolutionResult, ConfigData> imported = importer.resolveAndLoad(activationContext,
 					locationResolverContext, loaderContext, imports);
 			this.logger.trace(LogMessage.of(() -> getImportedMessage(imported.keySet())));
+
 			ConfigDataEnvironmentContributor contributorAndChildren = contributor.withChildren(importPhase,
 					asContributors(imported));
 			result = new ConfigDataEnvironmentContributors(this.logger, this.bootstrapContext,
