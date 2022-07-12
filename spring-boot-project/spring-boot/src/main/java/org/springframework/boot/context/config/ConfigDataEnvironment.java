@@ -141,15 +141,25 @@ class ConfigDataEnvironment {
 		UseLegacyConfigProcessingException.throwIfRequested(binder);
 		this.logFactory = logFactory;
 		this.logger = logFactory.getLog(getClass());
+		// 可以通过spring.config.on-not-found来指定某个配置文件没有找到时的动作，默认是抛异常
 		this.notFoundAction = binder.bind(ON_NOT_FOUND_PROPERTY, ConfigDataNotFoundAction.class)
 				.orElse(ConfigDataNotFoundAction.FAIL);
 		this.bootstrapContext = bootstrapContext;
 		this.environment = environment;
+
+		// 从spring.factories中拿到ConfigDataLocationResolver，默认会有两个：
+		// ConfigTreeConfigDataLocationResolver和StandardConfigDataLocationResolver
 		this.resolvers = createConfigDataLocationResolvers(logFactory, bootstrapContext, binder, resourceLoader);
+
 		this.additionalProfiles = additionalProfiles;
 		this.environmentUpdateListener = (environmentUpdateListener != null) ? environmentUpdateListener
 				: ConfigDataEnvironmentUpdateListener.NONE;
+
+		// 从spring.factories中拿到ConfigDataLoader，默认会有两个：
+		// ConfigTreeConfigDataLoader和StandardConfigDataLoader
 		this.loaders = new ConfigDataLoaders(logFactory, bootstrapContext, resourceLoader.getClassLoader());
+
+		// 每个Contributor要么对应一个PropertySource，要么对应一个location（配置文件路径或所在目录）
 		this.contributors = createContributors(binder);
 	}
 
@@ -163,6 +173,9 @@ class ConfigDataEnvironment {
 		MutablePropertySources propertySources = this.environment.getPropertySources();
 		List<ConfigDataEnvironmentContributor> contributors = new ArrayList<>(propertySources.size() + 10);
 		PropertySource<?> defaultPropertySource = null;
+
+		// 把目前Environment中的每个PropertySource都生成对应的Contributor
+		// 类型为EXISTING
 		for (PropertySource<?> propertySource : propertySources) {
 			if (DefaultPropertiesPropertySource.hasMatchingName(propertySource)) {
 				defaultPropertySource = propertySource;
@@ -174,7 +187,10 @@ class ConfigDataEnvironment {
 			}
 		}
 
+		// 这才是核心，根据指定路径或默认路径生成ConfigDataEnvironmentContributor，类型为INITIAL_IMPORT
 		contributors.addAll(getInitialImportContributors(binder));
+
+		// 把defaultProperties对应的Contributor放到最后
 		if (defaultPropertySource != null) {
 			this.logger.trace("Creating wrapped config data contributor for default property source");
 			contributors.add(ConfigDataEnvironmentContributor.ofExisting(defaultPropertySource));
@@ -194,13 +210,21 @@ class ConfigDataEnvironment {
 	private List<ConfigDataEnvironmentContributor> getInitialImportContributors(Binder binder) {
 		List<ConfigDataEnvironmentContributor> initialContributors = new ArrayList<>();
 
+		// 可以通过spring.config.import来增加路径
 		addInitialImportContributors(initialContributors, bindLocations(binder, IMPORT_PROPERTY, EMPTY_LOCATIONS));
-		addInitialImportContributors(initialContributors,
-				bindLocations(binder, ADDITIONAL_LOCATION_PROPERTY, EMPTY_LOCATIONS));
 
-		// 默认会向initialContributors中添加两个ConfigDataEnvironmentContributor，用来寻找DEFAULT_SEARCH_LOCATIONS目录下的配置文件
+		// 可以通过spring.config.additional-location来添加某个配置文件所在的目录
+		addInitialImportContributors(initialContributors, bindLocations(binder, ADDITIONAL_LOCATION_PROPERTY, EMPTY_LOCATIONS));
+
+		// 可以通过spring.config.location来指定配置文件路径，默认为
+		// optional:classpath:/;optional:classpath:/config/
+		// optional:file:./;optional:file:./config/;optional:file:./config/*/
+		// 如果指定了就不会用默认的了
 		addInitialImportContributors(initialContributors,
 				bindLocations(binder, LOCATION_PROPERTY, DEFAULT_SEARCH_LOCATIONS));
+
+		// 根据获取到的每个路径生成对应的Contributor，类型为INITIAL_IMPORT
+
 		return initialContributors;
 	}
 
@@ -210,6 +234,7 @@ class ConfigDataEnvironment {
 
 	private void addInitialImportContributors(List<ConfigDataEnvironmentContributor> initialContributors,
 			ConfigDataLocation[] locations) {
+		// 来了个倒序...
 		for (int i = locations.length - 1; i >= 0; i--) {
 			initialContributors.add(createInitialImportContributor(locations[i]));
 		}
@@ -225,22 +250,26 @@ class ConfigDataEnvironment {
 	 * {@link Environment}.
 	 */
 	void processAndApply() {
-		// ConfigDataImporter就是用来解析properties、yml文件的，会将结果封装为PropertySource
+
+		// 用来加载和解析配置文件的
 		ConfigDataImporter importer = new ConfigDataImporter(this.logFactory, this.notFoundAction, this.resolvers,
 				this.loaders);
 		registerBootstrapBinder(this.contributors, null, DENY_INACTIVE_BINDING);
 
-		// 拿到application.properties和application.yml对应的contributors
+		// 处理INITIAL_IMPORT状态的ConfigDataEnvironmentContributor
+		// 实际上就是去对应的配置文件路径下找到配置文件并解析，每解析一个配置文件就会生成一个ConfigDataEnvironmentContributor
+		// 所以可以会解析出来多个，那这多个就是对应ConfigDataEnvironmentContributor的children
 		ConfigDataEnvironmentContributors contributors = processInitial(this.contributors, importer);
+
+		// 没啥用
 		ConfigDataActivationContext activationContext = createActivationContext(
 				contributors.getBinder(null, BinderOption.FAIL_ON_BIND_TO_INACTIVE_SOURCE));
 		contributors = processWithoutProfiles(contributors, importer, activationContext);
 
-		// 基于contributors看配置的profile是什么，可以在application.properties/yml中配置，所以需要先拿application.properties和application.yml
-		// spring.profiles.active=dev
 		activationContext = withProfiles(contributors, activationContext);
 
-		// 根据配置的profiles获取到对应的properties或yml文件，比如application-dev.properties，对应的contributors
+		// 获取spring.profiles.active=dev
+		// 然后找指定的配置文件，比如application-dev.properties
 		contributors = processWithProfiles(contributors, importer, activationContext);
 
 		// 将contributors中的propertySource添加到Environment中去
@@ -252,7 +281,9 @@ class ConfigDataEnvironment {
 			ConfigDataImporter importer) {
 		this.logger.trace("Processing initial config data environment contributors without activation context");
 
+		// profile未知的情况下
 		contributors = contributors.withProcessedImports(importer, null);
+
 		registerBootstrapBinder(contributors, null, DENY_INACTIVE_BINDING);
 		return contributors;
 	}
@@ -342,8 +373,11 @@ class ConfigDataEnvironment {
 
 		// 把contributors中的PropertySource添加到environment中
 		MutablePropertySources propertySources = this.environment.getPropertySources();
+
+		// 把配置文件对应的PropertySource添加到environment中去
 		applyContributor(contributors, activationContext, propertySources);
 
+		// 把defaultProperties移至最后
 		DefaultPropertiesPropertySource.moveToEnd(propertySources);
 
 		Profiles profiles = activationContext.getProfiles();
@@ -360,6 +394,8 @@ class ConfigDataEnvironment {
 		for (ConfigDataEnvironmentContributor contributor : contributors) {
 			PropertySource<?> propertySource = contributor.getPropertySource();
 			if (contributor.getKind() == ConfigDataEnvironmentContributor.Kind.BOUND_IMPORT && propertySource != null) {
+
+				// activationContext中记录了当前的云环境和profile
 				if (!contributor.isActive(activationContext)) {
 					this.logger.trace(
 							LogMessage.format("Skipping inactive property source '%s'", propertySource.getName()));

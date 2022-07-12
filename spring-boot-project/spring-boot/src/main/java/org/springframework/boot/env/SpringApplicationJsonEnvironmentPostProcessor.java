@@ -102,7 +102,7 @@ public class SpringApplicationJsonEnvironmentPostProcessor implements Environmen
 		// 解析json字符串为map
 		Map<String, Object> map = parser.parseMap(propertyValue.getJson());
 		if (!map.isEmpty()) {
-			// 将json字符串map添加到environment.getPropertySources()中
+			// 将JsonPropertySource添加在servletContextInitParams之前
 			addJsonPropertySource(environment, new JsonPropertySource(propertyValue, flatten(map)));
 		}
 	}
@@ -214,8 +214,8 @@ public class SpringApplicationJsonEnvironmentPostProcessor implements Environmen
 
 		static JsonPropertyValue get(PropertySource<?> propertySource) {
 			// 从propertySource获取key为"spring.application.json"、"SPRING_APPLICATION_JSON"的配置项
-			// 可以通过-D的方式来配置spring.application.json:xxx
-			// xxx为一个json字符串
+			// 可以通过-D的方式来配置spring.application.json:xxx，或者commandline的方式配置都可以
+			// value为一个json字符串
 			for (String candidate : CANDIDATES) {
 				Object value = propertySource.getProperty(candidate);
 				if (value instanceof String && StringUtils.hasLength((String) value)) {

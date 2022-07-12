@@ -108,24 +108,22 @@ class ConfigDataEnvironmentContributors implements Iterable<ConfigDataEnvironmen
 						result.getRoot().withReplacement(contributor, bound));
 				continue;
 			}
+
+
 			ConfigDataLocationResolverContext locationResolverContext = new ContributorConfigDataLocationResolverContext(
 					result, contributor, activationContext);
 			ConfigDataLoaderContext loaderContext = new ContributorDataLoaderContext(this);
 
-			// imports表示要导入的文件路径
-			// 比如会获取到：
-			// file:./;optional:file:./config/;optional:file:./config/*/
-			// classpath:/;optional:classpath:/config/
-			// importer会从以上几个路径下找配置文件
+			// imports对应的就是location
 			List<ConfigDataLocation> imports = contributor.getImports();
 			this.logger.trace(LogMessage.format("Processing imports %s", imports));
 
-			// 利用importer来加载application.properties、application.yml
-			// 从上面imports对应的各个目录下寻找application.properties、application.yml解析，并得到对应的PropertySource
+			// 解析location，寻找该location下的application.properties或application.yml等，并解析得到ConfigData，其中包括了List<PropertySource<?>>
 			Map<ConfigDataResolutionResult, ConfigData> imported = importer.resolveAndLoad(activationContext,
 					locationResolverContext, loaderContext, imports);
 			this.logger.trace(LogMessage.of(() -> getImportedMessage(imported.keySet())));
 
+			// 把解析出来的结果封装为ConfigDataEnvironmentContributor，作为Children
 			ConfigDataEnvironmentContributor contributorAndChildren = contributor.withChildren(importPhase,
 					asContributors(imported));
 			result = new ConfigDataEnvironmentContributors(this.logger, this.bootstrapContext,
@@ -150,6 +148,8 @@ class ConfigDataEnvironmentContributors implements Iterable<ConfigDataEnvironmen
 
 	private ConfigDataEnvironmentContributor getNextToProcess(ConfigDataEnvironmentContributors contributors,
 			ConfigDataActivationContext activationContext, ImportPhase importPhase) {
+
+		// 遍历每个Contributor，如果
 		for (ConfigDataEnvironmentContributor contributor : contributors.getRoot()) {
 			if (contributor.getKind() == Kind.UNBOUND_IMPORT
 					|| isActiveWithUnprocessedImports(activationContext, importPhase, contributor)) {

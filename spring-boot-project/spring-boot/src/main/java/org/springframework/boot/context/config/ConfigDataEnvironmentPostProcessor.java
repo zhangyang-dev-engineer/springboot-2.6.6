@@ -99,8 +99,8 @@ public class ConfigDataEnvironmentPostProcessor implements EnvironmentPostProces
 		try {
 			this.logger.trace("Post-processing environment to add config data");
 			resourceLoader = (resourceLoader != null) ? resourceLoader : new DefaultResourceLoader();
-			// 生成ConfigDataEnvironment对象
-			// 执行processAndApply()
+			// 先生成ConfigDataEnvironment对象，核心是根据指定location构造类型为Kind.INITIAL_IMPORT的ConfigDataEnvironmentContributor
+			// processAndApply()将进行解析
 			getConfigDataEnvironment(environment, resourceLoader, additionalProfiles).processAndApply();
 		}
 		catch (UseLegacyConfigProcessingException ex) {

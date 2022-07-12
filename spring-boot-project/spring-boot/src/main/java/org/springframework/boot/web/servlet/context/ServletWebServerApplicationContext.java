@@ -179,6 +179,7 @@ public class ServletWebServerApplicationContext extends GenericWebApplicationCon
 		if (webServer == null && servletContext == null) {
 
 			ServletWebServerFactory factory = getWebServerFactory();
+
 			this.webServer = factory.getWebServer(getSelfInitializer());
 
 			getBeanFactory().registerSingleton("webServerGracefulShutdown",
@@ -206,6 +207,7 @@ public class ServletWebServerApplicationContext extends GenericWebApplicationCon
 	protected ServletWebServerFactory getWebServerFactory() {
 		// Use bean names so that we don't consider the hierarchy
 		String[] beanNames = getBeanFactory().getBeanNamesForType(ServletWebServerFactory.class);
+
 		if (beanNames.length == 0) {
 			throw new ApplicationContextException("Unable to start ServletWebServerApplicationContext due to missing "
 					+ "ServletWebServerFactory bean.");
@@ -214,6 +216,7 @@ public class ServletWebServerApplicationContext extends GenericWebApplicationCon
 			throw new ApplicationContextException("Unable to start ServletWebServerApplicationContext due to multiple "
 					+ "ServletWebServerFactory beans : " + StringUtils.arrayToCommaDelimitedString(beanNames));
 		}
+
 		return getBeanFactory().getBean(beanNames[0], ServletWebServerFactory.class);
 	}
 

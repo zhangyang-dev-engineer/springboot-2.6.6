@@ -1,33 +1,40 @@
 package com.zhouyu;
 
-import org.apache.catalina.connector.Connector;
+import com.zhouyu.service.UserService;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.SpringBootConfiguration;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.web.embedded.tomcat.TomcatConnectorCustomizer;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.web.servlet.ServletComponentScan;
+import org.springframework.boot.web.servlet.ServletContextInitializer;
+import org.springframework.boot.web.servlet.ServletContextInitializerBeans;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
+import org.springframework.context.annotation.PropertySource;
+import org.springframework.core.env.Environment;
+import org.springframework.web.context.support.ServletConfigPropertySource;
+import org.springframework.web.context.support.StandardServletEnvironment;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
+import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
 import java.util.HashMap;
 import java.util.Map;
 
 @SpringBootApplication
+@ConditionalOnClass
 public class MyApplication {
 
-	@Bean
-	public TomcatConnectorCustomizer tomcatConnectorCustomizer(){
-		return new TomcatConnectorCustomizer() {
-			@Override
-			public void customize(Connector connector) {
-				connector.setPort(8888);
-			}
-		};
-	}
-
 	public static void main(String[] args) {
-		SpringApplication.run(MyApplication.class);
+		SpringApplication application = new SpringApplication(MyApplication.class);
+		application.setEnvironmentPrefix("zhouyu");
+
+		Map<String, Object> map = new HashMap<>();
+		map.put("k1", "v1");
+		application.setDefaultProperties(map);
+
+		ConfigurableApplicationContext applicationContext = application.run(args);
+		System.out.println(applicationContext.getEnvironment().getProperty("test"));
 	}
 
 }

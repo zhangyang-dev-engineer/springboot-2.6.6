@@ -136,6 +136,7 @@ public abstract class SpringBootServletInitializer implements WebApplicationInit
 			builder.initializers(new ParentContextApplicationContextInitializer(parent));
 		}
 		builder.initializers(new ServletContextApplicationContextInitializer(servletContext));
+		// war包部署时，固定使用AnnotationConfigServletWebServerApplicationContext
 		builder.contextFactory((webApplicationType) -> new AnnotationConfigServletWebServerApplicationContext());
 		builder = configure(builder);
 		builder.listeners(new WebEnvironmentPropertySourceInitializer(servletContext));

@@ -44,15 +44,18 @@ import org.springframework.context.annotation.EnableAspectJAutoProxy;
  */
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnProperty(prefix = "spring.aop", name = "auto", havingValue = "true", matchIfMissing = true)
+// 使用AOP
 public class AopAutoConfiguration {
 
 	@Configuration(proxyBeanMethods = false)
 	@ConditionalOnClass(Advice.class)
+	// 使用AspectJ
 	static class AspectJAutoProxyingConfiguration {
 
 		@Configuration(proxyBeanMethods = false)
 		@EnableAspectJAutoProxy(proxyTargetClass = false)
 		@ConditionalOnProperty(prefix = "spring.aop", name = "proxy-target-class", havingValue = "false")
+		// 如果配置了spring.aop.proxy-target-class = false，那就用JDK动态代理
 		static class JdkDynamicAutoProxyConfiguration {
 
 		}
@@ -61,6 +64,8 @@ public class AopAutoConfiguration {
 		@EnableAspectJAutoProxy(proxyTargetClass = true)
 		@ConditionalOnProperty(prefix = "spring.aop", name = "proxy-target-class", havingValue = "true",
 				matchIfMissing = true)
+		// 如果配置了spring.aop.proxy-target-class = true，那就用CGLIB动态代理
+		// 如果没有配置spring.aop.proxy-target-class，那也用CGLIB动态代理
 		static class CglibAutoProxyConfiguration {
 
 		}
@@ -71,6 +76,7 @@ public class AopAutoConfiguration {
 	@ConditionalOnMissingClass("org.aspectj.weaver.Advice")
 	@ConditionalOnProperty(prefix = "spring.aop", name = "proxy-target-class", havingValue = "true",
 			matchIfMissing = true)
+	// 使用SpringAOP
 	static class ClassProxyingConfiguration {
 
 		@Bean
@@ -78,6 +84,7 @@ public class AopAutoConfiguration {
 			return (beanFactory) -> {
 				if (beanFactory instanceof BeanDefinitionRegistry) {
 					BeanDefinitionRegistry registry = (BeanDefinitionRegistry) beanFactory;
+					// 向Spring容器中添加一个InfrastructureAdvisorAutoProxyCreator
 					AopConfigUtils.registerAutoProxyCreatorIfNecessary(registry);
 					AopConfigUtils.forceAutoProxyCreatorToUseClassProxying(registry);
 				}

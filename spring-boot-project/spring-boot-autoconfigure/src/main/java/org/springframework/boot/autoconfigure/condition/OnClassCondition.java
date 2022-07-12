@@ -61,6 +61,7 @@ class OnClassCondition extends FilteringSpringBootCondition {
 
 	private ConditionOutcome[] resolveOutcomesThreaded(String[] autoConfigurationClasses,
 			AutoConfigurationMetadata autoConfigurationMetadata) {
+		// 分两半，开启两个线程进行匹配
 		int split = autoConfigurationClasses.length / 2;
 		OutcomesResolver firstHalfResolver = createOutcomesResolver(autoConfigurationClasses, 0, split,
 				autoConfigurationMetadata);
@@ -199,12 +200,18 @@ class OnClassCondition extends FilteringSpringBootCondition {
 
 		private ConditionOutcome[] getOutcomes(String[] autoConfigurationClasses, int start, int end,
 				AutoConfigurationMetadata autoConfigurationMetadata) {
+
+			// 记录每个自动配置的匹配结果
 			ConditionOutcome[] outcomes = new ConditionOutcome[end - start];
+
+			// 遍历每个自动配置进行匹配
 			for (int i = start; i < end; i++) {
 				String autoConfigurationClass = autoConfigurationClasses[i];
 				if (autoConfigurationClass != null) {
+					// 从autoConfigurationMetadata中获取当前自动配置的ConditionalOnClass的属性，拿到的就是当前自动配置所需要的类
 					String candidates = autoConfigurationMetadata.get(autoConfigurationClass, "ConditionalOnClass");
 					if (candidates != null) {
+						// 判断需要的类存不存在
 						outcomes[i - start] = getOutcome(candidates);
 					}
 				}

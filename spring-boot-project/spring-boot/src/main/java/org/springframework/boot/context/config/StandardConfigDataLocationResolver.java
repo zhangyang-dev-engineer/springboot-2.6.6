@@ -116,9 +116,10 @@ public class StandardConfigDataLocationResolver
 	@Override
 	public List<StandardConfigDataResource> resolve(ConfigDataLocationResolverContext context,
 			ConfigDataLocation location) throws ConfigDataNotFoundException {
+
 		// location包含了多个目录，比如classpath:/;optional:classpath:/config/
-		// 依次获取classpath:/目录，classpath:/config/目录下的application.yml和application.properties文件
-		// 然后解析这些文件得到文件对应的StandardConfigDataResource
+		// getReferences方法会返回所有目录下所有的StandardConfigDataReference，有很多个
+		// resolve方法会解析StandardConfigDataReference对应的路径是否真正存在
 		return resolve(getReferences(context, location.split()));
 	}
 
@@ -193,6 +194,7 @@ public class StandardConfigDataLocationResolver
 		Set<StandardConfigDataReference> references = new LinkedHashSet<>();
 		// configNames的值为配置项spring.config.name对应的value，默认为application
 		// 获取directory目录下的application.properties和application.yml文件
+		// 利用PropertySourceLoader
 		for (String name : this.configNames) {
 			Deque<StandardConfigDataReference> referencesForName = getReferencesForConfigName(name, configDataLocation,
 					directory, profile);
@@ -207,7 +209,7 @@ public class StandardConfigDataLocationResolver
 		// propertySourceLoaders为：
 		// org.springframework.boot.env.PropertiesPropertySourceLoader
 		// org.springframework.boot.env.YamlPropertySourceLoader
-		// 这是从spring.factories文件中指定了的
+		// 这是从spring.factories文件中指定的
 		for (PropertySourceLoader propertySourceLoader : this.propertySourceLoaders) {
 			for (String extension : propertySourceLoader.getFileExtensions()) {
 				StandardConfigDataReference reference = new StandardConfigDataReference(configDataLocation, directory,

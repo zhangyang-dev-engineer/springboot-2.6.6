@@ -47,12 +47,14 @@ abstract class FilteringSpringBootCondition extends SpringBootCondition
 	public boolean[] match(String[] autoConfigurationClasses, AutoConfigurationMetadata autoConfigurationMetadata) {
 		ConditionEvaluationReport report = ConditionEvaluationReport.find(this.beanFactory);
 
+		// autoConfigurationMetadata就是spring-autoconfigure-metadata.properties中的内容
 		ConditionOutcome[] outcomes = getOutcomes(autoConfigurationClasses, autoConfigurationMetadata);
 
 		boolean[] match = new boolean[outcomes.length];
 		for (int i = 0; i < outcomes.length; i++) {
 			match[i] = (outcomes[i] == null || outcomes[i].isMatch());
-			// 会把不符合条件的AutoConfiguration打印日志
+
+			// 首轮不匹配的，进行日志打印，以及记录到ConditionEvaluationReport中去
 			if (!match[i] && outcomes[i] != null) {
 				logOutcome(autoConfigurationClasses[i], outcomes[i]);
 				if (report != null) {

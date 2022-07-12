@@ -83,9 +83,10 @@ class ConfigDataImporter {
 		try {
 			Profiles profiles = (activationContext != null) ? activationContext.getProfiles() : null;
 
-			// 寻找各个目录下的application.properties文件和application.yml文件，解析并得到对应的ConfigDataResolutionResult
+			// 解析路径，得到路径下的配置文件
 			List<ConfigDataResolutionResult> resolved = resolve(locationResolverContext, profiles, locations);
-			// 将application.properties文件和application.yml文件中的配置加载为PropertySource
+
+			// 将配置文件加载为ConfigData，其中就包括了PropertySource
 			return load(loaderContext, resolved);
 		}
 		catch (IOException ex) {
@@ -116,6 +117,8 @@ class ConfigDataImporter {
 	private Map<ConfigDataResolutionResult, ConfigData> load(ConfigDataLoaderContext loaderContext,
 			List<ConfigDataResolutionResult> candidates) throws IOException {
 		Map<ConfigDataResolutionResult, ConfigData> result = new LinkedHashMap<>();
+
+		// 又来了个倒序...
 		for (int i = candidates.size() - 1; i >= 0; i--) {
 			ConfigDataResolutionResult candidate = candidates.get(i);
 			ConfigDataLocation location = candidate.getLocation();

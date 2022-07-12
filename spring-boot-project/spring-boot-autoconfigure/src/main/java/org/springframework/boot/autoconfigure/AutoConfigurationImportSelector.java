@@ -138,8 +138,11 @@ public class AutoConfigurationImportSelector implements DeferredImportSelector, 
 
 		// 获取spring.factories中的AutoConfigurationImportFilter对AutoConfiguration进行过滤
 		// 默认会拿到OnBeanCondition、OnClassCondition、OnWebApplicationCondition
-		// 这三个会去判断上面的AutoConfiguration是否符合它们自身所要求的条件，不符合的会打印日志
+		// 这三个会去判断上面的AutoConfiguration是否符合它们自身所要求的条件，不符合的会过滤掉，表示不会进行解析了
+		// 会利用spring-autoconfigure-metadata.properties中的配置来进行过滤
+		// spring-autoconfigure-metadata.properties文件中的内容是利用Java中的AbstractProcessor技术在编译时生成出来的
 		configurations = getConfigurationClassFilter().filter(configurations);
+		// configurations表示合格的，exclusions表示被排除的，把它们记录在ConditionEvaluationReportAutoConfigurationImportListener中
 		fireAutoConfigurationImportEvents(configurations, exclusions);
 
 		// 最后返回的AutoConfiguration都是符合条件的
@@ -294,6 +297,9 @@ public class AutoConfigurationImportSelector implements DeferredImportSelector, 
 	}
 
 	private void fireAutoConfigurationImportEvents(List<String> configurations, Set<String> exclusions) {
+
+		// ConditionEvaluationReportAutoConfigurationImportListener
+		// 条件评估报告
 		List<AutoConfigurationImportListener> listeners = getAutoConfigurationImportListeners();
 		if (!listeners.isEmpty()) {
 			AutoConfigurationImportEvent event = new AutoConfigurationImportEvent(this, configurations, exclusions);
@@ -382,8 +388,12 @@ public class AutoConfigurationImportSelector implements DeferredImportSelector, 
 			long startTime = System.nanoTime();
 			String[] candidates = StringUtils.toStringArray(configurations);
 			boolean skipped = false;
+
+			// 逐个利用AutoConfigurationImportFilter来判断所有的自动配置类的条件是否匹配，匹配结果存在match数组中
+			// 先利用OnBeanCondition进行过滤
+			// 再利用OnClassCondition进行过滤
+			// 再利用OnWebApplicationCondition进行过滤
 			for (AutoConfigurationImportFilter filter : this.filters) {
-				// 逐个利用AutoConfigurationImportFilter来判断所有的自动配置类的条件是否匹配，匹配结果存在match数组中
 				boolean[] match = filter.match(candidates, this.autoConfigurationMetadata);
 
 				for (int i = 0; i < match.length; i++) {

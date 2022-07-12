@@ -53,6 +53,9 @@ import javax.tools.StandardLocation;
  * @author Phillip Webb
  * @since 1.5.0
  */
+
+// 编译时，会把所有加了这些注解的类都传给process()
+
 @SupportedAnnotationTypes({ "org.springframework.boot.autoconfigure.condition.ConditionalOnClass",
 		"org.springframework.boot.autoconfigure.condition.ConditionalOnBean",
 		"org.springframework.boot.autoconfigure.condition.ConditionalOnSingleCandidate",

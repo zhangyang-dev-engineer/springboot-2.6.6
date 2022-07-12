@@ -119,6 +119,8 @@ class ConfigDataLocationResolvers {
 		if (profiles == null) {
 			return resolved;
 		}
+
+		// 解析指定profile的配置文件
 		List<ConfigDataResolutionResult> profileSpecific = resolve(location, true,
 				() -> resolver.resolveProfileSpecific(context, location, profiles));
 		return merge(resolved, profileSpecific);
