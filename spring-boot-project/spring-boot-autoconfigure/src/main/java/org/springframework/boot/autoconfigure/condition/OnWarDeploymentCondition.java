@@ -37,7 +37,9 @@ class OnWarDeploymentCondition extends SpringBootCondition {
 		ResourceLoader resourceLoader = context.getResourceLoader();
 		if (resourceLoader instanceof WebApplicationContext) {
 			WebApplicationContext applicationContext = (WebApplicationContext) resourceLoader;
+
 			ServletContext servletContext = applicationContext.getServletContext();
+
 			if (servletContext != null) {
 				return ConditionOutcome.match("Application is deployed as a WAR file.");
 			}

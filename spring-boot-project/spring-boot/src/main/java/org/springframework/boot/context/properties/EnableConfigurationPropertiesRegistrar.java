@@ -46,6 +46,8 @@ class EnableConfigurationPropertiesRegistrar implements ImportBeanDefinitionRegi
 		registerInfrastructureBeans(registry);
 		registerMethodValidationExcludeFilter(registry);
 		ConfigurationPropertiesBeanRegistrar beanRegistrar = new ConfigurationPropertiesBeanRegistrar(registry);
+		// 获取@EnableConfigurationProperties中指定的类型
+		// 然后把指定类型生成BeanDefinition注册到Spring容器中
 		getTypes(metadata).forEach(beanRegistrar::register);
 	}
 

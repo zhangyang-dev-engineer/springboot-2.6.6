@@ -380,6 +380,7 @@ public class AutoConfigurationImportSelector implements DeferredImportSelector, 
 		private final List<AutoConfigurationImportFilter> filters;
 
 		ConfigurationClassFilter(ClassLoader classLoader, List<AutoConfigurationImportFilter> filters) {
+			// 会去加载META-INF/spring-autoconfigure-metadata.properties文件中的内容
 			this.autoConfigurationMetadata = AutoConfigurationMetadataLoader.loadMetadata(classLoader);
 			this.filters = filters;
 		}
@@ -462,9 +463,13 @@ public class AutoConfigurationImportSelector implements DeferredImportSelector, 
 					() -> String.format("Only %s implementations are supported, got %s",
 							AutoConfigurationImportSelector.class.getSimpleName(),
 							deferredImportSelector.getClass().getName()));
+
+			// 获取所有自动配置类，并赋值给autoConfigurationEntries和entries
 			AutoConfigurationEntry autoConfigurationEntry = ((AutoConfigurationImportSelector) deferredImportSelector)
 					.getAutoConfigurationEntry(annotationMetadata);
 			this.autoConfigurationEntries.add(autoConfigurationEntry);
+
+			// 每个自动配置类对应annotationMetadata，selectImports()方法会取出来用
 			for (String importClassName : autoConfigurationEntry.getConfigurations()) {
 				this.entries.putIfAbsent(importClassName, annotationMetadata);
 			}
@@ -475,13 +480,17 @@ public class AutoConfigurationImportSelector implements DeferredImportSelector, 
 			if (this.autoConfigurationEntries.isEmpty()) {
 				return Collections.emptyList();
 			}
+
 			Set<String> allExclusions = this.autoConfigurationEntries.stream()
 					.map(AutoConfigurationEntry::getExclusions).flatMap(Collection::stream).collect(Collectors.toSet());
+
 			Set<String> processedConfigurations = this.autoConfigurationEntries.stream()
 					.map(AutoConfigurationEntry::getConfigurations).flatMap(Collection::stream)
 					.collect(Collectors.toCollection(LinkedHashSet::new));
+
 			processedConfigurations.removeAll(allExclusions);
 
+			// 给自动配置类排序
 			return sortAutoConfigurations(processedConfigurations, getAutoConfigurationMetadata()).stream()
 					.map((importClassName) -> new Entry(this.entries.get(importClassName), importClassName))
 					.collect(Collectors.toList());

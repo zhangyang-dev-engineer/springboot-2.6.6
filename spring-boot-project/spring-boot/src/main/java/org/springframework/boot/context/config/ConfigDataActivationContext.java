@@ -40,6 +40,7 @@ class ConfigDataActivationContext {
 	 * @param binder a binder providing access to relevant config data contributions
 	 */
 	ConfigDataActivationContext(Environment environment, Binder binder) {
+		// 推测当前是在什么云平台
 		this.cloudPlatform = deduceCloudPlatform(environment, binder);
 		this.profiles = null;
 	}

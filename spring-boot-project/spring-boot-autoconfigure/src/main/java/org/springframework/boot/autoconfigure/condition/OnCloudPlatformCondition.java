@@ -42,6 +42,7 @@ class OnCloudPlatformCondition extends SpringBootCondition {
 	private ConditionOutcome getMatchOutcome(Environment environment, CloudPlatform cloudPlatform) {
 		String name = cloudPlatform.name();
 		ConditionMessage.Builder message = ConditionMessage.forCondition(ConditionalOnCloudPlatform.class);
+
 		if (cloudPlatform.isActive(environment)) {
 			return ConditionOutcome.match(message.foundExactly(name));
 		}

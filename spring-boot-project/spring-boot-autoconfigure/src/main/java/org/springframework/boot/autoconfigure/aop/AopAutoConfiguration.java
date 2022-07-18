@@ -44,12 +44,25 @@ import org.springframework.context.annotation.EnableAspectJAutoProxy;
  */
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnProperty(prefix = "spring.aop", name = "auto", havingValue = "true", matchIfMissing = true)
-// 使用AOP
 public class AopAutoConfiguration {
+
+	// 如果spring.aop.auto=false，表示关闭AOP
+
+	// 如果spring.aop.auto=true或没有配置：
+		// 如果依赖中有aspject，那么
+		// spring.aop.proxy-target-class = false，那就用JDK动态代理
+		// spring.aop.proxy-target-class = true，那就用CGLIB动态代理
+		// spring.aop.proxy-target-class 没有配置，也用CGLIB动态代理
+
+		// 如果依赖中没有aspject，那么
+		// spring.aop.proxy-target-class = false，那么不会开启AOP
+		// spring.aop.proxy-target-class = true，那就用CGLIB动态代理
+		// spring.aop.proxy-target-class 没有配置，也用CGLIB动态代理
+	    // 在这种情况下只有role为ROLE_INFRASTRUCTURE的Advisor才生效
 
 	@Configuration(proxyBeanMethods = false)
 	@ConditionalOnClass(Advice.class)
-	// 使用AspectJ
+	// 支持AspectJ
 	static class AspectJAutoProxyingConfiguration {
 
 		@Configuration(proxyBeanMethods = false)
@@ -76,7 +89,8 @@ public class AopAutoConfiguration {
 	@ConditionalOnMissingClass("org.aspectj.weaver.Advice")
 	@ConditionalOnProperty(prefix = "spring.aop", name = "proxy-target-class", havingValue = "true",
 			matchIfMissing = true)
-	// 使用SpringAOP
+	// 如果没有aspectj的依赖，默认也会开启AOP，但是只有role为ROLE_INFRASTRUCTURE的Advisor才生效，并且会走cglib进行动态代理
+	// spring.aop.proxy-target-class如果为false，那就不会开启AOP功能，为false表示要走jdk动态代理
 	static class ClassProxyingConfiguration {
 
 		@Bean
@@ -84,7 +98,7 @@ public class AopAutoConfiguration {
 			return (beanFactory) -> {
 				if (beanFactory instanceof BeanDefinitionRegistry) {
 					BeanDefinitionRegistry registry = (BeanDefinitionRegistry) beanFactory;
-					// 向Spring容器中添加一个InfrastructureAdvisorAutoProxyCreator
+					// 向Spring容器中添加一个InfrastructureAdvisorAutoProxyCreator，一个BeanPostProcessor
 					AopConfigUtils.registerAutoProxyCreatorIfNecessary(registry);
 					AopConfigUtils.forceAutoProxyCreatorToUseClassProxying(registry);
 				}

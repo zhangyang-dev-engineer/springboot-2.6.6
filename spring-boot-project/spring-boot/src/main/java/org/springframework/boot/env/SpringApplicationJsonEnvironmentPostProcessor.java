@@ -151,6 +151,7 @@ public class SpringApplicationJsonEnvironmentPostProcessor implements Environmen
 	private void addJsonPropertySource(ConfigurableEnvironment environment, PropertySource<?> source) {
 		MutablePropertySources sources = environment.getPropertySources();
 		String name = findPropertySource(sources);
+
 		if (sources.contains(name)) {
 			sources.addBefore(name, source);
 		}

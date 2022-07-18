@@ -113,10 +113,12 @@ public class DispatcherServletAutoConfiguration {
 	@Import(DispatcherServletConfiguration.class)
 	protected static class DispatcherServletRegistrationConfiguration {
 
+		// 它是用来把DispatcherServlet添加到Tomcat中去的
 		@Bean(name = DEFAULT_DISPATCHER_SERVLET_REGISTRATION_BEAN_NAME)
 		@ConditionalOnBean(value = DispatcherServlet.class, name = DEFAULT_DISPATCHER_SERVLET_BEAN_NAME)
 		public DispatcherServletRegistrationBean dispatcherServletRegistration(DispatcherServlet dispatcherServlet,
 				WebMvcProperties webMvcProperties, ObjectProvider<MultipartConfigElement> multipartConfig) {
+
 			DispatcherServletRegistrationBean registration = new DispatcherServletRegistrationBean(dispatcherServlet,
 					webMvcProperties.getServlet().getPath());
 			registration.setName(DEFAULT_DISPATCHER_SERVLET_BEAN_NAME);
@@ -134,22 +136,34 @@ public class DispatcherServletAutoConfiguration {
 		public ConditionOutcome getMatchOutcome(ConditionContext context, AnnotatedTypeMetadata metadata) {
 			ConditionMessage.Builder message = ConditionMessage.forCondition("Default DispatcherServlet");
 			ConfigurableListableBeanFactory beanFactory = context.getBeanFactory();
+
+			// 有类型为DispatcherServlet的Bean
 			List<String> dispatchServletBeans = Arrays
 					.asList(beanFactory.getBeanNamesForType(DispatcherServlet.class, false, false));
+
+			// 这些Bean的名字是不是有叫dispatcherServlet
 			if (dispatchServletBeans.contains(DEFAULT_DISPATCHER_SERVLET_BEAN_NAME)) {
 				return ConditionOutcome
 						.noMatch(message.found("dispatcher servlet bean").items(DEFAULT_DISPATCHER_SERVLET_BEAN_NAME));
 			}
+
+			// beanFactory中是不是有名字叫dispatcherServlet的Bean
 			if (beanFactory.containsBean(DEFAULT_DISPATCHER_SERVLET_BEAN_NAME)) {
 				return ConditionOutcome.noMatch(
 						message.found("non dispatcher servlet bean").items(DEFAULT_DISPATCHER_SERVLET_BEAN_NAME));
 			}
+
+			// 没有类型为DispatcherServlet的Bean
 			if (dispatchServletBeans.isEmpty()) {
 				return ConditionOutcome.match(message.didNotFind("dispatcher servlet beans").atAll());
 			}
+
+			// 有类型为DispatcherServlet的Bean，但是其中没有名字为dispatcherServlet的bean
 			return ConditionOutcome.match(message.found("dispatcher servlet bean", "dispatcher servlet beans")
 					.items(Style.QUOTE, dispatchServletBeans)
 					.append("and none is named " + DEFAULT_DISPATCHER_SERVLET_BEAN_NAME));
+
+			// 总结：要自己定义DispatcherServlet的话，beanName就一定要叫做dispatcherServlet
 		}
 
 	}

@@ -90,7 +90,9 @@ class OnWebApplicationCondition extends FilteringSpringBootCondition {
 	@Override
 	public ConditionOutcome getMatchOutcome(ConditionContext context, AnnotatedTypeMetadata metadata) {
 		boolean required = metadata.isAnnotated(ConditionalOnWebApplication.class.getName());
+
 		ConditionOutcome outcome = isWebApplication(context, metadata, required);
+
 		if (required && !outcome.isMatch()) {
 			return ConditionOutcome.noMatch(outcome.getConditionMessage());
 		}
@@ -129,21 +131,26 @@ class OnWebApplicationCondition extends FilteringSpringBootCondition {
 
 	private ConditionOutcome isServletWebApplication(ConditionContext context) {
 		ConditionMessage.Builder message = ConditionMessage.forCondition("");
+
 		if (!ClassNameFilter.isPresent(SERVLET_WEB_APPLICATION_CLASS, context.getClassLoader())) {
 			return ConditionOutcome.noMatch(message.didNotFind("servlet web application classes").atAll());
 		}
+
 		if (context.getBeanFactory() != null) {
 			String[] scopes = context.getBeanFactory().getRegisteredScopeNames();
 			if (ObjectUtils.containsElement(scopes, "session")) {
 				return ConditionOutcome.match(message.foundExactly("'session' scope"));
 			}
 		}
+
 		if (context.getEnvironment() instanceof ConfigurableWebEnvironment) {
 			return ConditionOutcome.match(message.foundExactly("ConfigurableWebEnvironment"));
 		}
+
 		if (context.getResourceLoader() instanceof WebApplicationContext) {
 			return ConditionOutcome.match(message.foundExactly("WebApplicationContext"));
 		}
+
 		return ConditionOutcome.noMatch(message.because("not a servlet web application"));
 	}
 

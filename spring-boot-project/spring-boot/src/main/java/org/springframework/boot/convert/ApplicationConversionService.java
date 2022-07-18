@@ -204,6 +204,8 @@ public class ApplicationConversionService extends FormattingConversionService {
 	public static void configure(FormatterRegistry registry) {
 		DefaultConversionService.addDefaultConverters(registry);
 		DefaultFormattingConversionService.addDefaultFormatters(registry);
+
+		// 添加类型转化器
 		addApplicationFormatters(registry);
 		addApplicationConverters(registry);
 	}

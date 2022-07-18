@@ -59,9 +59,11 @@ public class SystemEnvironmentPropertySourceEnvironmentPostProcessor implements 
 	@SuppressWarnings("unchecked")
 	private void replacePropertySource(ConfigurableEnvironment environment, String sourceName,
 			PropertySource<?> propertySource, String environmentPrefix) {
+
 		Map<String, Object> originalSource = (Map<String, Object>) propertySource.getSource();
 		SystemEnvironmentPropertySource source = new OriginAwareSystemEnvironmentPropertySource(sourceName,
 				originalSource, environmentPrefix);
+
 		environment.getPropertySources().replace(sourceName, source);
 	}
 

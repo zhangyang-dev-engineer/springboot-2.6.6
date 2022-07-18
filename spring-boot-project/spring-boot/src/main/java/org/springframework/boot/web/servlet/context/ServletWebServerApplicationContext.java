@@ -179,7 +179,6 @@ public class ServletWebServerApplicationContext extends GenericWebApplicationCon
 		if (webServer == null && servletContext == null) {
 
 			ServletWebServerFactory factory = getWebServerFactory();
-
 			this.webServer = factory.getWebServer(getSelfInitializer());
 
 			getBeanFactory().registerSingleton("webServerGracefulShutdown",

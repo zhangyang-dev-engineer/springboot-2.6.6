@@ -255,7 +255,9 @@ public class SpringApplication {
 	public SpringApplication(ResourceLoader resourceLoader, Class<?>... primarySources) {
 		this.resourceLoader = resourceLoader;
 		Assert.notNull(primarySources, "PrimarySources must not be null");
+
 		this.primarySources = new LinkedHashSet<>(Arrays.asList(primarySources));
+
 		// 1. 推测web应用类型（NONE、REACTIVE、SERVLET）
 		this.webApplicationType = WebApplicationType.deduceFromClasspath();
 
@@ -297,36 +299,45 @@ public class SpringApplication {
 	public ConfigurableApplicationContext run(String... args) {
 		long startTime = System.nanoTime();
 
-		// 引导启动器，为ApplicationContext启动做准备的
+		// 1、创建引导启动器，类似一个ApplicationContext，可以往里面添加一些对象
 		DefaultBootstrapContext bootstrapContext = createBootstrapContext();
 
 		ConfigurableApplicationContext context = null;
 		configureHeadlessProperty();
 
-		// 从spring.factories中获取SpringApplicationRunListener对象
-		// 默认会拿到一个EventPublishingRunListener，它会启动过程的各个阶段发布对应的事件
+		// 2、从spring.factories中获取SpringApplicationRunListener对象
+		// 默认会拿到一个EventPublishingRunListener，它会启动过程的各个阶段发布对应的ApplicationEvent事件
 		SpringApplicationRunListeners listeners = getRunListeners(args);
 
+		// 3、发布ApplicationStartingEvent
 		listeners.starting(bootstrapContext, this.mainApplicationClass);
 		try {
-			// 将run()的参数封装为DefaultApplicationArguments对象
+
+			// 4、将run()的参数封装为DefaultApplicationArguments对象
 			ApplicationArguments applicationArguments = new DefaultApplicationArguments(args);
 
-			// 准备Environment，包括操作系统，JVM、ServletContext、properties、yaml等等配置
+			// 5、准备Environment
+			// 包括操作系统，JVM、ServletContext、properties、yaml等等配置
+			// 会发布一个ApplicationEnvironmentPreparedEvent
 			ConfigurableEnvironment environment = prepareEnvironment(listeners, bootstrapContext, applicationArguments);
 
 			// 默认spring.beaninfo.ignore=true，表示不需要jdk缓存beanInfo信息，Spring自己会缓存
 			configureIgnoreBeanInfo(environment);
+
 			Banner printedBanner = printBanner(environment);
 
-			// 根据应用类型创建Spring容器
+			// 6、根据应用类型创建Spring容器
 			context = createApplicationContext();
 			context.setApplicationStartup(this.applicationStartup);
 
-			// 准备Spring容器
+			// 7、利用ApplicationContextInitializer初始化Spring容器
+			// 8、发布ApplicationContextInitializedEvent
+			// 9、关闭DefaultBootstrapContext
+			// 10、注册primarySources类，就是run方法存入进来的配置类
+			// 11、发布ApplicationPreparedEvent事件
 			prepareContext(bootstrapContext, context, environment, listeners, applicationArguments, printedBanner);
 
-			// 刷新Spring容器，会解析配置类、扫描、启动WebServer
+			// 12、刷新Spring容器，会解析配置类、扫描、启动WebServer
 			refreshContext(context);
 
 			// 空方法
@@ -338,22 +349,22 @@ public class SpringApplication {
 				new StartupInfoLogger(this.mainApplicationClass).logStarted(getApplicationLog(), timeTakenToStartup);
 			}
 
-			// 发布ApplicationStartedEvent事件，表示Spring容器已经启动
+			// 13、发布ApplicationStartedEvent事件，表示Spring容器已经启动
 			listeners.started(context, timeTakenToStartup);
 
-			// 从Spring容器中获取ApplicationRunner和CommandLineRunner，并执行其run()
+			// 14、从Spring容器中获取ApplicationRunner和CommandLineRunner，并执行其run()
 			callRunners(context, applicationArguments);
 		}
 		catch (Throwable ex) {
+			// 15、发布ApplicationFailedEvent事件
 			handleRunFailure(context, ex, listeners);
 			throw new IllegalStateException(ex);
 		}
 
-
 		try {
 			Duration timeTakenToReady = Duration.ofNanos(System.nanoTime() - startTime);
 
-			// 发布ApplicationReadyEvent事件，表示Spring容器已经准备好了
+			// 16、发布ApplicationReadyEvent事件，表示Spring容器已经准备好了
 			listeners.ready(context, timeTakenToReady);
 		}
 		catch (Throwable ex) {
@@ -563,6 +574,7 @@ public class SpringApplication {
 	 */
 	protected void configureEnvironment(ConfigurableEnvironment environment, String[] args) {
 		if (this.addConversionService) {
+			// 添加一些类型转化器，比如把properties文件中的字符串转化成各种类型
 			environment.setConversionService(new ApplicationConversionService());
 		}
 		// 添加SimpleCommandLinePropertySource {name='commandLineArgs'}，放在首位

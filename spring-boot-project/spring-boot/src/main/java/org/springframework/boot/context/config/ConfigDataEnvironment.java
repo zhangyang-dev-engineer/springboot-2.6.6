@@ -261,18 +261,24 @@ class ConfigDataEnvironment {
 		// 所以可以会解析出来多个，那这多个就是对应ConfigDataEnvironmentContributor的children
 		ConfigDataEnvironmentContributors contributors = processInitial(this.contributors, importer);
 
-		// 没啥用
+		// 确定当前所在的云平台
 		ConfigDataActivationContext activationContext = createActivationContext(
 				contributors.getBinder(null, BinderOption.FAIL_ON_BIND_TO_INACTIVE_SOURCE));
+
+		// 没啥用
 		contributors = processWithoutProfiles(contributors, importer, activationContext);
 
+		// 确定当前被激活的profile
+		// 获取spring.profiles.active=dev
 		activationContext = withProfiles(contributors, activationContext);
 
-		// 获取spring.profiles.active=dev
-		// 然后找指定的配置文件，比如application-dev.properties
+		// 然后找指定profile的配置文件，比如application-dev.properties
 		contributors = processWithProfiles(contributors, importer, activationContext);
 
-		// 将contributors中的propertySource添加到Environment中去
+		// 根据当前云平台和指定的profile，过滤每个配置文件，配置文件中可以指定激活条件
+		// spring.config.activate.on-profile=dev
+		// spring.config.activate.on-cloudPlatform=CLOUD_FOUNDRY
+		// 符合激活条件则将PropertySource添加到Environment中去
 		applyToEnvironment(contributors, activationContext, importer.getLoadedLocations(),
 				importer.getOptionalLocations());
 	}

@@ -65,8 +65,10 @@ class OnClassCondition extends FilteringSpringBootCondition {
 		int split = autoConfigurationClasses.length / 2;
 		OutcomesResolver firstHalfResolver = createOutcomesResolver(autoConfigurationClasses, 0, split,
 				autoConfigurationMetadata);
+
 		OutcomesResolver secondHalfResolver = new StandardOutcomesResolver(autoConfigurationClasses, split,
 				autoConfigurationClasses.length, autoConfigurationMetadata, getBeanClassLoader());
+
 		ConditionOutcome[] secondHalf = secondHalfResolver.resolveOutcomes();
 		ConditionOutcome[] firstHalf = firstHalfResolver.resolveOutcomes();
 		ConditionOutcome[] outcomes = new ConditionOutcome[autoConfigurationClasses.length];
