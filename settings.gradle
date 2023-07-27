@@ -1,50 +1,54 @@
 pluginManagement {
-	repositories {
-		mavenCentral()
-		gradlePluginPortal()
-		maven {
-			url 'https://repo.spring.io/release'
-		}
-		if (version.endsWith('-SNAPSHOT')) {
-			maven { url "https://repo.spring.io/snapshot" }
-		}
-	}
-	resolutionStrategy {
-		eachPlugin {
-			if (requested.id.id == "org.jetbrains.kotlin.jvm") {
-				useVersion "${kotlinVersion}"
-			}
-			if (requested.id.id == "org.jetbrains.kotlin.plugin.spring") {
-				useVersion "${kotlinVersion}"
-			}
-		}
-	}
+    repositories {
+        maven { url 'https://maven.aliyun.com/repository/public' }
+        maven { url 'https://maven.aliyun.com/repository/central' }
+        maven { url 'https://maven.aliyun.com/repository/google' }
+        maven { url 'https://maven.aliyun.com/repository/public' }
+        maven { url 'https://maven.aliyun.com/repository/gradle-plugin' }
+
+        mavenCentral()
+        gradlePluginPortal()
+        maven { url 'https://repo.spring.io/release' }
+        if (version.endsWith('-SNAPSHOT')) {
+            maven { url "https://repo.spring.io/snapshot" }
+        }
+    }
+    resolutionStrategy {
+        eachPlugin {
+            if (requested.id.id == "org.jetbrains.kotlin.jvm") {
+                useVersion "${kotlinVersion}"
+            }
+            if (requested.id.id == "org.jetbrains.kotlin.plugin.spring") {
+                useVersion "${kotlinVersion}"
+            }
+        }
+    }
 }
 
 plugins {
-	id "com.gradle.enterprise" version "3.8.1"
-	id "io.spring.ge.conventions" version "0.0.9"
+    id "com.gradle.enterprise" version "3.8.1"
+    id "io.spring.ge.conventions" version "0.0.13"
 }
 
-rootProject.name="spring-boot-build"
+rootProject.name = "spring-boot-build"
 
 settings.gradle.projectsLoaded {
-	gradleEnterprise {
-		buildScan {
-			def toolchainVersion = settings.gradle.rootProject.findProperty('toolchainVersion')
-			if (toolchainVersion != null) {
-				value('Toolchain version', toolchainVersion)
-				tag("JDK-$toolchainVersion")
-			}
-			def buildDir = settings.gradle.rootProject.getBuildDir()
-			buildDir.mkdirs()
-			new File(buildDir, "build-scan-uri.txt").text = "build scan not generated"
-			buildScanPublished { scan ->
-				buildDir.mkdirs()
-				new File(buildDir, "build-scan-uri.txt").text = "<${scan.buildScanUri}|build scan>\n"
-			}
-		}
-	}
+    gradleEnterprise {
+        buildScan {
+            def toolchainVersion = settings.gradle.rootProject.findProperty('toolchainVersion')
+            if (toolchainVersion != null) {
+                value('Toolchain version', toolchainVersion)
+                tag("JDK-$toolchainVersion")
+            }
+            def buildDir = settings.gradle.rootProject.getBuildDir()
+            buildDir.mkdirs()
+            new File(buildDir, "build-scan-uri.txt").text = "build scan not generated"
+            buildScanPublished { scan ->
+                buildDir.mkdirs()
+                new File(buildDir, "build-scan-uri.txt").text = "<${scan.buildScanUri}|build scan>\n"
+            }
+        }
+    }
 }
 
 include "spring-boot-project:spring-boot-dependencies"
@@ -79,11 +83,11 @@ include "spring-boot-system-tests:spring-boot-deployment-tests"
 include "spring-boot-system-tests:spring-boot-image-tests"
 
 file("${rootDir}/spring-boot-project/spring-boot-starters").eachDirMatch(~/spring-boot-starter.*/) {
-	include "spring-boot-project:spring-boot-starters:${it.name}"
+    include "spring-boot-project:spring-boot-starters:${it.name}"
 }
 
 file("${rootDir}/spring-boot-tests/spring-boot-smoke-tests").eachDirMatch(~/spring-boot-smoke-test.*/) {
-	include "spring-boot-tests:spring-boot-smoke-tests:${it.name}"
+    include "spring-boot-tests:spring-boot-smoke-tests:${it.name}"
 }
 include 'spring-boot-zhouyu'
 
